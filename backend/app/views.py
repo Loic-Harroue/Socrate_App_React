@@ -15,7 +15,22 @@ from django.contrib.auth import authenticate, login
 from .forms import SignUpForm
 from app.utils.api_logger import log_api_call, api_log_store
 from app.constants.colors import COLORS
+from . import settings_constants
 
+API_TOKEN_URL = settings_constants.SETTINGS_CONSTANT['API_TOKEN_URL']
+API_VERSION_URL = settings_constants.SETTINGS_CONSTANT['API_VERSION_URL']
+API_CATEGORIES_URL = settings_constants.SETTINGS_CONSTANT['API_CATEGORIES_URL']
+API_MODELS_URL     = settings_constants.SETTINGS_CONSTANT['API_MODELS_URL']
+API_SUBMODELS_URL  = settings_constants.SETTINGS_CONSTANT['API_SUBMODELS_URL']
+API_MODES_URL = settings_constants.SETTINGS_CONSTANT['API_MODES_URL']
+API_CHAT_URL = settings_constants.SETTINGS_CONSTANT['API_CHAT_URL']
+API_KEYWORDS_URL = settings_constants.SETTINGS_CONSTANT['API_KEYWORDS_URL']
+API_SYNONYMES_URL = settings_constants.SETTINGS_CONSTANT['API_SYNONYMES_URL']
+API_CLUSTER_URL = settings_constants.SETTINGS_CONSTANT['API_CLUSTER_URL']
+API_CLUSTER_ZERO_URL = settings_constants.SETTINGS_CONSTANT['API_CLUSTER_ZERO_URL']
+API_TRANSLATE_URL = settings_constants.SETTINGS_CONSTANT['API_TRANSLATE_URL']
+API_LEVELS_URL = settings_constants.SETTINGS_CONSTANT['API_LEVELS_URL']
+API_PROMPTS_URL = settings_constants.SETTINGS_CONSTANT['API_PROMPTS_URL']
 
 #############################################################################################
                                     #Partie connexion
