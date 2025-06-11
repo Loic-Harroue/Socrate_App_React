@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Générateur de mots-clés{% endblock %}
+
+{% block content %}
+<div class="content">
+  <form id="keywordsForm">
+    {% csrf_token %}
+    <label for="inputText">Texte à analyser :</label><br>
+    <textarea id="inputText" rows="8" style="width:100%; margin-top: 5px;"></textarea><br>
+    <button type="submit">Analyser</button>
+  </form>
+
+  <div id="resultBlock" class="response-block" style="display: none;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+const form = document.getElementById('keywordsForm');
+const resultBlock = document.getElementById('resultBlock');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const message = document.getElementById('inputText').value;
+  const extractionType = document.getElementById('extractionSelect')?.value;
+
+  const payload = {
+    model: selectedModelName,
+    sous_model: selectedSubmodel,
+    user_artirev: "API",
+    question: message,
+    dataset_type: extractionType
+  };
+
+  try {
+    const resp = await fetch("{% url 'ajax_keywords_api' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await resp.json();
+
+    if (data && data.keywords) {
+      resultBlock.innerHTML = `<strong>Mots-clés détectés :</strong><br>${data.keywords.join(', ')}`;
+    } else {
+      resultBlock.innerHTML = "Aucune donnée reçue.";
+    }
+    resultBlock.style.display = 'block';
+  } catch (err) {
+    console.error("Erreur appel keywords :", err);
+    resultBlock.innerHTML = "Erreur lors de l’appel API.";
+    resultBlock.style.display = 'block';
+  }
+});
+</script>
+{% endblock %}

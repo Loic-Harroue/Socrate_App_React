@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription</title>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body class="register">
+    <div class="auth-container">
+        <h2>Créer un compte</h2>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="errors">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit">S'inscrire</button>
+        </form>
+        <p class="auth-link">
+            Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
+        </p>
+    </div>
+</body>
+</html>

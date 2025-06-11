@@ -1,0 +1,6 @@
+socrateenv
+app/settings_constants.py
+.env
+app/__pycache__
+app/constants/__pycache__
+app/utils/__pycache__

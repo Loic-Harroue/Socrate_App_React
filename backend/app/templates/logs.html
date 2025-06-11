@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<div class="container">
+  <h2>Logs API</h2>
+  <div class="table-responsive">
+    {{ df_html|safe }}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function() {
+    $('#log-table').DataTable({
+      paging: true,
+      searching: true,
+      ordering: true,
+      order: [],
+      dom: 'Bfrtip',
+      buttons: ['copyHtml5', 'excelHtml5', 'csvHtml5', 'print'],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json"
+      }
+    });
+  });
+</script>
+{% endblock %}

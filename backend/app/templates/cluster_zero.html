@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@latest/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@latest/dist/jsoneditor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
+  <!-- Conteneur principal -->
+  <div class="cluster-zero-page">
+    <p id="responseTime" style="font-style: italic; color: gray;"></p>
+
+    <div id="jsoneditor" style="width: 100%; height: 500px;"></div>
+    <button id="generatePdfServerBtn">Générer PDF</button>
+    <button id="generateDocxServerBtn">Générer DOCX</button>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+function handleApiResponse(responseText) {
+  rawJsonResponse = responseText;
+  console.log(responseText)
+}
+
+// Bouton PDF
+document.getElementById("generatePdfServerBtn")?.addEventListener("click", function () {
+  if (!rawJsonResponse) {
+    alert("Aucune donnée à exporter.");
+    return;
+  }
+
+  fetch("ajax/generate_pdf/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      'X-CSRFToken': csrftoken
+    },
+    body: JSON.stringify(rawJsonResponse),
+  })
+  .then(response => {
+  if (!response.ok) {
+    throw new Error('Erreur lors de la génération du PDF');
+  }
+  return response.blob();
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "summary.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  })
+  .catch(error => {
+    alert("Erreur PDF : " + error.message);
+    console.error(error);
+  });
+});
+
+
+// Bouton DOCX
+document.getElementById("generateDocxServerBtn")?.addEventListener("click", function () {
+  if (!rawJsonResponse) {
+    alert("Aucune donnée à exporter.");
+    return;
+  }
+
+  fetch("ajax/generate_docx/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      'X-CSRFToken': csrftoken
+    },
+    body: JSON.stringify(rawJsonResponse),
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Erreur lors de la génération du DOCX');
+    }
+    return response.blob();
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "summary.docx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  })
+  .catch(error => {
+    alert("Erreur DOCX : " + error.message);
+    console.error(error);
+  });
+});
+
+</script>
+{% endblock %}

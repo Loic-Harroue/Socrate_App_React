@@ -1,0 +1,579 @@
+<!-- templates/partials/sidebar.html -->
+{% load static %} 
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+
+<div class="sidebar">
+  <div class="logo-wrapper">
+    <img src="{% static 'logos/socrate.png' %}" alt="Logo Socrate">
+    <p id="versionDisplay"></p>
+  </div>
+
+  {% if active_page == 'cluster' or active_page == 'cluster_zero' %}
+  <div class="mb-4">
+    <label for="modeSelect"class="form-label">Mode</label>
+    <select id="modeSelect" class="form-select custom-select">
+      <option value=""></option>
+    </select>
+  </div>
+  {% endif %}
+  <div class="mb-4">
+    <label class="form-label">Menu</label>
+    <nav>
+      <ul id="dynamicNav" class="nav-list"></ul>
+    </nav>
+  </div>
+
+  {% if active_page in 'chat keywords synonymes cluster cluster_zero' %}
+  <div class="mb-4">
+    <label for="globalModel" class="form-label">Choisissez un modèle</label>
+    <select id="globalModel" class="form-select custom-select ">
+      <option value="">-- Sélectionner --</option>
+      {% for df_models in df_models %}
+        <option value="{{ df_models.model_id }}" {% if df_models.model_id == selected_model_id %}selected{% endif %}>{{ df_models.model_name }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="globalSubmodel" class="form-label">Choisissez un sous modèle</label>
+    <select id="globalSubmodel" class="form-select custom-select">
+      <option value="">-- Sélectionner --</option>
+    </select>
+  </div>
+  {% endif %}
+
+  {% if active_page in 'chat keywords synonymes cluster cluster_zero' %}
+  <div class="mb-4">
+    <label for="extractionSelect" class="form-label">Science</label>
+    <select id="extractionSelect" class="form-select custom-select">
+      <option value="datasocial">Social sciences</option>
+      <option value="datahealth">Health sciences</option>
+      <option value="dataengi">Engineering sciences</option>
+    </select>
+  </div>
+  {% endif %}
+
+  {% if active_page in 'prompts' %}
+  <div class="mb-4">
+    <label for="categorySelect"class="form-label">Catégories</label>
+    <select id="categorySelect" class="form-select custom-select">
+      <option value=""></option>
+    </select>
+  </div>
+
+  <div class="mb-4">
+    <label for="levelsSelect"class="form-label">Level</label>
+    <select id="levelsSelect" class="form-select custom-select">
+      <option value=""></option>
+    </select>
+  </div>
+  {% endif %}
+
+  {% if active_page == 'cluster' %}
+  <div class="mb-4">
+    <label class="form-label">Chargez votre fichier Excel (.xlsx)</label>
+    <form id="uploadForm" method="post" enctype="multipart/form-data" class="upload-container">
+      {% csrf_token %}
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="xlsxFile" name="file" accept=".xlsx" hidden />
+        <p class="drop-zone-text">
+          <strong>Drag and drop file here</strong><br>
+          <span>Limit 200MB per file • XLSX</span>
+        </p>
+      </div>
+    </form>
+    <div id="uploadStatus"></div>
+  </div>
+  {% endif %}
+
+  {% if active_page == 'cluster_zero' %}
+  <div class="mb-4">
+    <label class="form-label">Chargez votre fichier Excel (.xlsx)</label>
+    <form id="uploadzeroForm" method="post" enctype="multipart/form-data" class="upload-container">
+      {% csrf_token %}
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="xlsxzeroFile" name="file" accept=".xlsx" hidden />
+        <p class="drop-zone-text">
+          <strong>Drag and drop file here</strong><br>
+          <span>Limit 200MB per file • XLSX</span>
+        </p>
+      </div>
+    </form>
+    <div id="uploadzeroStatus"></div>
+  </div>
+  {% endif %}
+
+  {% if request.user.is_authenticated and request.user.is_superuser or request.user.groups.all.0.name == "Market" or request.user.groups.all.0.name == "SuperAdmin" %}
+  <hr>
+  <a href="{% url 'register' %}" class="sidebar-button w-100" role="button">
+    Créer un compte
+  </a>
+  {% endif %}
+
+  {% if request.user.is_authenticated and request.user.is_superuser %}
+  <a href="{% url 'prompts' %}" class="sidebar-button w-100" role="button">
+    Gestion des prompts
+  </a>
+  {% endif %}
+
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/read-excel-file@5.6.0/bundle/read-excel-file.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsoneditor@latest/dist/jsoneditor.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let c of cookies) {
+            const cookie = c.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let selectedModelName = '';
+let selectedSubmodel = '';
+const activePage = "{{ active_page }}";
+const csrftoken = getCookie('csrftoken');
+
+// Choice.js
+document.addEventListener('DOMContentLoaded', function () {
+  let globalSubmodelChoice = null;
+
+  const modeSelect = document.querySelector('#modeSelect');
+  const globalModel = document.querySelector('#globalModel');
+  const globalSubmodel = document.querySelector('#globalSubmodel');
+  const extractionSelect = document.querySelector('#extractionSelect');
+  const categorySelect = document.querySelector('#categorySelect');
+  const levelsSelect = document.querySelector('#levelsSelect');
+
+  // Initialisation Choices
+  if (modeSelect) {
+    fetch("{% url 'ajax_load_modes' %}", {
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+      .then(response => response.json())
+      .then(data => {
+        const choices = new Choices(modeSelect, {
+          searchEnabled: false,
+          itemSelectText: '',
+          shouldSort: false
+        });
+
+        choices.setChoices([
+          { value: '', label: '-- Sélectionner un mode --', selected: true, disabled: true },
+          ...data.map(item => ({
+            value: item.ref,
+            label: item.name
+          }))
+        ], 'value', 'label', false);
+      })
+      .catch(err => {
+        console.error('Erreur chargement des modes :', err);
+      });
+  }
+
+  if (globalModel) {
+    const globalModelChoice = new Choices(globalModel, { searchEnabled: false, itemSelectText: '' });
+
+    // Chargement dynamique des sous-modèles uniquement si globalModel existe
+    if (globalSubmodel) {
+      globalSubmodelChoice = new Choices(globalSubmodel, { searchEnabled: false, itemSelectText: '' });
+
+      globalModel.addEventListener('change', function () {
+        const modelId = this.value;
+        selectedModelName = this.options[this.selectedIndex].text;
+
+        globalSubmodelChoice.clearStore();
+
+        if (!modelId) return;
+
+        fetch("{% url 'ajax_load_submodels' %}?model_id=" + modelId, {
+          headers: { 'X-CSRFToken': csrftoken }
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            globalSubmodelChoice.setChoices([
+              { value: '', label: '-- Sélectionner --', selected: true, disabled: true }
+            ], 'value', 'label', false);
+
+            const choicesArray = data.submodels.map(name => ({
+              value: name,
+              label: name,
+              selected: false,
+              disabled: false
+            }));
+
+            globalSubmodelChoice.setChoices(choicesArray, 'value', 'label', false);
+          })
+          .catch(err => {
+            console.error('Erreur chargement sous-modèles :', err);
+          });
+      });
+
+      globalSubmodel.addEventListener('change', function () {
+        selectedSubmodel = this.value;
+      });
+    }
+  }
+
+  if (extractionSelect) {
+    new Choices(extractionSelect, { searchEnabled: false, itemSelectText: '' });
+  }
+
+  if (categorySelect) {
+  fetch("{% url 'ajax_select_categories' %}", {
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+    .then(response => response.json())
+    .then(data => {
+      const categoryChoices = new Choices(categorySelect, {
+        searchEnabled: false,
+        itemSelectText: '',
+        shouldSort: false
+      });
+
+      categoryChoices.setChoices([
+        { value: '', label: '-- Sélectionner une catégorie --', selected: true, disabled: true },
+        ...data.map(item => ({
+          value: item.ref,
+          label: item.name
+        }))
+      ], 'value', 'label', false);
+    })
+    .catch(err => {
+      console.error('Erreur chargement des catégories :', err);
+    });
+}
+
+  if (levelsSelect) {
+    fetch("{% url 'ajax_load_levels' %}", {
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+      .then(response => response.json())
+      .then(data => {
+        const levelChoices = new Choices(levelsSelect, {
+          searchEnabled: false,
+          itemSelectText: '',
+          shouldSort: false
+        });
+
+        levelChoices.setChoices([
+          { value: '', label: '-- Sélectionner un niveau --', selected: true, disabled: true },
+          ...data.map(item => ({
+            value: item.ref,
+            label: item.name
+          }))
+        ], 'value', 'label', false);
+      })
+      .catch(err => {
+        console.error('Erreur chargement des niveaux :', err);
+      });
+  }
+});
+// Categories
+document.addEventListener("DOMContentLoaded", function () {
+  fetch("{% url 'ajax_load_categories' %}", {
+    headers: { 'X-CSRFToken': csrftoken }
+  })
+    .then(response => response.json())
+    .then(data => {
+      const navList = document.getElementById("dynamicNav");
+      navList.innerHTML = "";
+
+      const activePage = "{{ active_page|escapejs }}";
+
+      data.forEach(link => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = "/" + link.ref + "/";
+        a.textContent = link.name;
+
+        // Marquer l'élément actif
+        if (link.ref === activePage) {
+          a.classList.add("active");
+        }
+
+        // Gestion du clic : active un seul élément à la fois
+        a.addEventListener("click", function (event) {
+          // Supprimer l'ancienne sélection
+          document.querySelectorAll("#dynamicNav a.active").forEach(el => el.classList.remove("active"));
+          // Activer l'élément cliqué
+          this.classList.add("active");
+        });
+
+        li.appendChild(a);
+        navList.appendChild(li);
+      });
+    })
+    .catch(err => {
+      console.error("Erreur lors du chargement de la navigation :", err);
+    });
+});
+// Version
+document.addEventListener('DOMContentLoaded', function () {
+  fetch('{% url "ajax_get_version" %}', {
+    method: 'POST',
+    headers: {'X-CSRFToken': getCookie('csrftoken')}
+  })
+  .then(response => response.json())
+  .then(data => {
+    const versionText = data?.version || 'inconnue';
+    document.getElementById('versionDisplay').textContent = `Version : ${versionText}`;
+  })
+  .catch(error => {
+    console.error('Erreur récupération version :', error);
+    document.getElementById('versionDisplay').textContent = 'Version : erreur';
+  });
+});
+// File upload
+document.addEventListener('DOMContentLoaded', function () {
+  if (activePage === 'cluster') {
+    setupClusterForm();
+  } else if (activePage === 'cluster_zero') {
+    setupClusterZeroForm();
+  }
+});
+function setupClusterForm() {
+  const form = document.getElementById('uploadForm');
+  const fileInput = document.getElementById('xlsxFile');
+  const statusDiv = document.getElementById('uploadStatus');
+  const resultDiv = document.getElementById('processClusterResult');
+  const responseTimeDiv = document.getElementById('responseTime');
+  const loadingIndicator = document.getElementById('loadingIndicator');
+
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('hover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('hover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('hover');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      sendForm();
+    }
+  });
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length) {
+      sendForm();
+    }
+  });
+
+  function sendForm() {
+    if (!fileInput.files.length) {
+      statusDiv.textContent = 'Veuillez sélectionner un fichier XLSX.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('model', selectedModelName);
+    formData.append('sous_model', selectedSubmodel);
+    formData.append('dataset_type', document.getElementById('extractionSelect')?.value || '');
+    const start = performance.now();
+
+    loadingIndicator.style.display = 'block';
+
+    fetch("{% url 'ajax_cluster_api' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken
+      },
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        handleApiResponse(data);
+        const duration = (performance.now() - start) / 1000;
+        if (data.error) {
+          statusDiv.textContent = "Erreur : " + data.error;
+        } else {
+          const html = renderClusterResults(data, duration);
+          resultDiv.innerHTML = html;
+          if (responseTimeDiv) {
+            responseTimeDiv.textContent = `Temps de réponse API : ${duration.toFixed(2)} ms`;
+          }
+        }
+      })
+      .catch(error => {
+        statusDiv.textContent = "Une erreur est survenue.";
+        console.error('Erreur AJAX :', error);
+      })
+      .then(() => {
+        loadingIndicator.style.display = 'none';
+      });
+  }
+}
+
+function setupClusterZeroForm() {
+  const form = document.getElementById('uploadzeroForm');
+  const fileInput = document.getElementById('xlsxzeroFile');
+  const statusDiv = document.getElementById('uploadzeroStatus');
+  const resultDiv = document.getElementById('jsoneditor');
+  const responseTimeDiv = document.getElementById('responseTime');
+  const dropZone = document.getElementById('dropZone');
+
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('hover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('hover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('hover');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      sendForm();
+    }
+  });
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length) {
+      sendForm();
+    }
+  });
+  let editor;
+  function sendForm() {
+    if (!fileInput.files.length) {
+      statusDiv.textContent = 'Veuillez sélectionner un fichier XLSX.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('model', selectedModelName);
+    formData.append('sous_model', selectedSubmodel);
+    formData.append('dataset_type', document.getElementById('extractionSelect')?.value || '');
+
+    const start = performance.now();
+
+    fetch("{% url 'ajax_cluster_zero_api' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken
+      },
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        handleApiResponse(data);
+        const duration = (performance.now() - start) / 1000;
+        if (responseTimeDiv) {
+          responseTimeDiv.textContent = `Temps de réponse API : ${duration.toFixed(2)} secondes`;
+        }
+        if (data.error) {
+          statusDiv.textContent = "Erreur : " + data.error;
+        } else {
+          statusDiv.textContent = "Fichier traité avec succès.";
+
+          if (!editor) {
+            const options = {
+              mode: 'tree',
+              modes: ['tree', 'code', 'view'],
+              mainMenuBar: true
+            };
+            editor = new JSONEditor(resultDiv, options);
+          }
+
+          editor.set(data);
+        }
+      })
+      .catch(error => {
+        statusDiv.textContent = "Une erreur est survenue.";
+        console.error('Erreur AJAX :', error);
+      });
+  }
+}
+// Submodel request
+document.addEventListener("DOMContentLoaded", function () {
+  const savedModel = localStorage.getItem('selectedModelName');
+  const savedSubmodel = localStorage.getItem('selectedSubmodel');
+  const savedExtraction = localStorage.getItem('selectedExtraction');
+
+  if (savedModel) {
+    const modelSelect = document.getElementById('globalModel');
+    modelSelect.value = savedModel;
+
+    const subSelect = document.getElementById('globalSubmodel');
+    subSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+
+    fetch("{% url 'ajax_load_submodels' %}?model_id=" + savedModel, {
+      headers: { 'X-CSRFToken': csrftoken }
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      data.submodels.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        subSelect.appendChild(opt);
+      });
+
+      if (savedSubmodel) {
+        subSelect.value = savedSubmodel;
+      }
+    });
+  }
+
+  if (savedExtraction) {
+    const extSelect = document.getElementById('extractionSelect');
+    if (extSelect) {
+      extSelect.value = savedExtraction;
+    }
+  }
+
+  // Sauvegarde lors des changements
+  document.getElementById('globalModel').addEventListener('change', function () {
+    localStorage.setItem('selectedModelName', this.value);
+  });
+
+  document.getElementById('globalSubmodel').addEventListener('change', function () {
+    localStorage.setItem('selectedSubmodel', this.value);
+  });
+
+  const extractionSelect = document.getElementById('extractionSelect');
+  if (extractionSelect) {
+    extractionSelect.addEventListener('change', function () {
+      localStorage.setItem('selectedExtraction', this.value);
+    });
+  }
+});
+// Dropzone
+document.addEventListener('DOMContentLoaded', function () {
+  if (activePage === 'cluster_zero' || activePage === 'cluster') {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('xlsxFile');
+
+    if (dropZone && fileInput) {
+      dropZone.addEventListener('click', () => {
+        fileInput.click();
+      });
+    }
+  }
+});
+</script>
+{% endblock %}

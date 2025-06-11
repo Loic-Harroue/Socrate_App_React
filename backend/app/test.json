@@ -1,0 +1,38 @@
+{
+    "task_id": "d4564bf3-d70a-4df9-ab69-465f052472f1", 
+    "result_model": "mistral-medium", 
+    "user_access": true, 
+    "main_title": "Current research themes with most impactful recent research", 
+    "sub_title": "Research theme", 
+    "sub_title2": "Subthemes", 
+    "sub_title3": "Citations that do not belong to any subtheme", 
+    "prompt_token": 6112, 
+    "completion_token": 1322, 
+    "couts": 0.0276, 
+    "clusters": 
+        [
+            {"cluster": 1, 
+            "summary": "This cluster explores the impact of technostress on various aspects of work and personal life, particularly in the context of remote working and digital transformation. It includes studies on how constant connectivity and technology use affect well-being, work-life balance, and psychological health among different professional groups.", 
+            "common_theme": "Impact of Technostress on Work and Personal Life", 
+            "subthemes": [
+                {"subtheme_type": "Technostress and Well-being", 
+                "subtheme_citations": [
+                    "Camarena (2021)", 
+                    "Tru\u0219a (2023)", 
+                    "Taser (2022)", 
+                    "Bottaro (2025)", 
+                    "Singh (2022)", 
+                    "Mart\u00ednez-Naval\u00f3n (2023)", 
+                    "Andrulli (2023)", 
+                    "Spagnoli (2020)"
+                ]}, 
+                {"subtheme_type": "Remote Working and Technostress", 
+                "subtheme_citations": [
+                    "Camacho (2022)", 
+                    "Battisti (2022)"
+                ]}, 
+                {"subtheme_type": "Technostress in Academic Settings", 
+                "subtheme_citations": ["Vallone (2023)"]}], 
+                "outliers": ["Malik (2021)", "Rademaker (2023)", "Harris (2021)", "Enstr\u00f6m (2024)"]}, 
+                {"cluster": 2, 
+                "summary": "This cluster focuses on the broader implications of technostress in various professional and organizational settings. It includes studies on the effects of technostress on burnout, innovation, leadership, and organizational performance, highlighting the challenges and coping mechanisms in different work environments.", "common_theme": "Broader Implications of Technostress in Professional Settings", "subthemes": [{"subtheme_type": "Technostress and Burnout", "subtheme_citations": ["Banerjee (2024)", "Kaltenegger (2023)"]}, {"subtheme_type": "Technostress and Leadership", "subtheme_citations": ["Al Issa (2024)", "Erti\u00f6 (2024)"]}, {"subtheme_type": "Technostress in Hospitality and Tourism", "subtheme_citations": ["Shi (2024)", "Lee (2023)"]}, {"subtheme_type": "Technostress and Organizational Performance", "subtheme_citations": ["Kumar (2023)", "Zhang (2025)"]}], "outliers": ["Klimova (2025)", "De\u2019 (2020)", "Kumar (2022)", "Becker (2023)", "Bahamondes-Rosado (2023)", "Choi (2024)", "Dutta (2023)"]}, {"cluster": 3, "summary": "This cluster examines the impact of technostress in educational and healthcare settings. It includes studies on how technostress affects students, teachers, and healthcare practitioners, exploring the challenges and potential solutions in these specific contexts.", "common_theme": "Technostress in Educational and Healthcare Settings", "subthemes": [{"subtheme_type": "Technostress in Higher Education", "subtheme_citations": ["Lin (2024)", "Ali (2024)", "Sharma (2022)", "Penado Abilleira (2021)", "Li (2020)"]}, {"subtheme_type": "Technostress in Healthcare", "subtheme_citations": ["Keshavarz (2025)"]}, {"subtheme_type": "Technostress and E-Learning", "subtheme_citations": ["Wang (2023)"]}], "outliers": ["Yaseen (2024)", "Kumar (2023)", "Yang (2025)", "Loh (2021)", "Loh (2022)", "Al-Adwan (2024)", "Duong (2024)"]}, {"cluster": 4, "summary": "This cluster delves into the consequences of technostress in various work contexts, including remote work, gig economy, and healthcare. It explores the buffering roles of social support, digital mindset, and other factors in mitigating technostress and its impact on job performance and well-being.", "common_theme": "Consequences of Technostress in Various Work Contexts", "subthemes": [{"subtheme_type": "Technostress and Social Support", "subtheme_citations": ["Khedhaouria (2024)"]}, {"subtheme_type": "Technostress in the Gig Economy", "subtheme_citations": ["Umair (2023)", "Cram (2022)"]}, {"subtheme_type": "Technostress and Digital Mindset", "subtheme_citations": ["Valta (2024)"]}, {"subtheme_type": "Technostress in Healthcare", "subtheme_citations": ["Issa (2024)"]}], "outliers": ["Pfl\u00fcgner (2024)", "Whelan (2022)", "Nastjuk (2023)", "Mahapatra (2024)", "Simba (2025)", "Tarafdar (2024)", "Ma (2023)", "Wang (2022)"]}]}

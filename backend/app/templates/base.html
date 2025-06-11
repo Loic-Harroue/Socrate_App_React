@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Socrates{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/table.css' %}">
+  <link rel="icon" href="{% static 'icons/socrate_icon.png' %}">
+  <title>App Socrate</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+        {% include 'partials/sidebar.html' %}
+        </div>
+
+        <div class="content">
+          {% block content %}
+          {% endblock %}
+        </div>
+    </div>
+
+  {% block scripts %}
+  {% endblock %}
+</body>
+</html>

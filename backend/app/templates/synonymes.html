@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Recherche de synonymes{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <h2>Entrez un ou plusieurs mots-clés pour trouver des synonymes</h2>
+
+  <form id="synonymForm">
+    {% csrf_token %}
+
+    <label for="words">Mots-clés :</label>
+    <textarea id="words" name="words" rows="4" style="width: 100%;"></textarea>
+
+    <button type="submit">Chercher des synonymes</button>
+  </form>
+
+  <div id="synonymResult" style="margin-top: 20px;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+document.getElementById('synonymForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const words = document.getElementById('words').value;
+  const extractionType = document.getElementById('extractionSelect')?.value || '';  // facultatif
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  const payload = {
+    model: selectedModelName,            // Ces variables doivent venir d’un script global
+    sous_model: selectedSubmodel,
+    user_artirev: "API",
+    words: words,
+    dataset_type: extractionType
+  };
+
+  try {
+    const response = await fetch("{% url 'ajax_synonymes_api' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    const resultDiv = document.getElementById('synonymResult');
+
+    if (data.error) {
+      resultDiv.innerHTML = `<p style="color: red;">Erreur : ${data.error}</p>`;
+    } else if (data.synonyms) {
+      resultDiv.innerHTML = `<h3>Synonymes :</h3><ul>` +
+        data.synonyms.map(s => `<li>${s}</li>`).join('') +
+        `</ul>`;
+    } else {
+      resultDiv.innerHTML = `<p>Aucun synonyme trouvé.</p>`;
+    }
+
+  } catch (err) {
+    console.error("Erreur API :", err);
+    document.getElementById('synonymResult').innerHTML = `<p style="color:red;">Erreur de traitement.</p>`;
+  }
+});
+</script>
+{% endblock %}

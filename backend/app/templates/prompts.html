@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Gestion des prompts{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <label for="promptText" class="form-label">Prompt</label>
+  <textarea id="promptText" class="form-control" style="height: 800px;"></textarea>
+</div>
+<button id="loadPromptBtn" class="btn btn-primary">Charger le prompt</button>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const loadBtn = document.getElementById('loadPromptBtn');
+  const promptText = document.getElementById('promptText');
+  const categorySelect = document.querySelector('#categorySelect');
+  const levelsSelect = document.querySelector('#levelsSelect');
+
+  loadBtn.addEventListener('click', function () {
+    const categoryRef = categorySelect?.value;
+    const levelRef = levelsSelect?.value;
+
+    if (!categoryRef || !levelRef) {
+      alert("Veuillez sélectionner une catégorie et un niveau.");
+      return;
+    }
+
+    const url = `{% url 'ajax_get_prompt' %}?category_ref=${categoryRef}&level_ref=${levelRef}`;
+    console.log(url)
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(resp => {
+      if (!resp.ok) throw new Error("Erreur lors du chargement du prompt.");
+      return resp.json();
+    })
+    .then(data => {
+      promptText.value = data.prompt_text || 'Aucun prompt trouvé.';
+    })
+    .catch(err => {
+      console.error("Erreur récupération du prompt :", err);
+      alert("Impossible de récupérer le prompt.");
+    });
+  });
+});
+
+</script>
+{% endblock %}

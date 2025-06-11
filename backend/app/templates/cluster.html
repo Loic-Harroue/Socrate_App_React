@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <div id="loadingIndicator" style="display:none; margin-top:10px; font-weight:bold;">
+    <span class="spinner" style="display:inline-block; width:16px; height:16px; border:3px solid #ccc; border-top-color:#333; border-radius:50%; animation: spin 1s linear infinite; vertical-align: middle; margin-right: 8px;"></span>
+    Chargement en cours...
+  </div>
+  <div id="processClusterResult"></div>
+
+  <button id="generatePdfServerBtn">Générer PDF</button>
+  <button id="generateDocxServerBtn">Générer DOCX</button>
+
+  <button id="translateJsonBtn">Traduire et réafficher</button>
+  <div id="translatedClusterResult" style="margin-top: 30px;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const COLORS = JSON.parse('{{ colors_json|escapejs }}');
+</script>
+<script>
+  let rawJsonResponse = null;  
+  
+  function renderClusterResults(data, responseTime) {
+    let html = `
+      <div class="processClusterResult">
+        <h2>${data.main_title || 'Résultats de l’analyse des clusters'}</h2>
+        <p><strong>Modèle :</strong> ${data.result_model}</p>
+        <p><strong>Coût :</strong> ${data.couts}</p>
+        <p><strong>Prompt tokens :</strong> ${data.prompt_token}</p>
+        <p><strong>Completion tokens :</strong> ${data.completion_token}</p>
+    `;
+
+    if (typeof responseTime === 'number') {
+      html += `<p><strong>Temps de réponse API :</strong> ${responseTime.toFixed(2)} s</p>`;
+    }
+
+    data.clusters.forEach((cluster, index) => {
+      const colorObj = COLORS[index % COLORS.length];
+      const colorHex = colorObj.hexa;
+      html += `
+        <h3 style="color: ${colorHex}">Cluster ${cluster.cluster} — ${cluster.common_theme}</h3>
+        <p>${cluster.summary}</p>
+      `;
+
+      if (cluster.subthemes && cluster.subthemes.length > 0) {
+        html += `<h4>${data.sub_title2 || 'Subthemes'}</h4><ul>`;
+        cluster.subthemes.forEach(sub => {
+          html += `<li><strong>${sub.subtheme_type}</strong>: ${sub.subtheme_citations.join(', ')}</li>`;
+        });
+        html += `</ul>`;
+      }
+
+      if (cluster.outliers && cluster.outliers.length > 0) {
+        html += `<h5>${data.sub_title3 || 'Citations hors sous-thèmes'}</h5><ul>`;
+        cluster.outliers.forEach(citation => {
+          html += `<li>${citation}</li>`;
+        });
+        html += `</ul>`;
+      }
+    });
+
+    html += `</div>`;
+    return html;
+  }
+
+
+  function handleApiResponse(responseText) {
+    rawJsonResponse = responseText;
+  }
+
+  // Bouton PDF
+  document.getElementById("generatePdfServerBtn")?.addEventListener("click", function () {
+    if (!rawJsonResponse) {
+      alert("Aucune donnée à exporter.");
+      return;
+    }
+
+    fetch("ajax/generate_pdf/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify(rawJsonResponse),
+    })
+    .then(response => {
+    if (!response.ok) {
+      throw new Error('Erreur lors de la génération du PDF');
+    }
+    return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "summary.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      alert("Erreur PDF : " + error.message);
+      console.error(error);
+    });
+  });
+
+
+  // Bouton DOCX
+  document.getElementById("generateDocxServerBtn")?.addEventListener("click", function () {
+    if (!rawJsonResponse) {
+      alert("Aucune donnée à exporter.");
+      return;
+    }
+
+    fetch("ajax/generate_docx/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify(rawJsonResponse),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du DOCX');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "summary.docx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      alert("Erreur DOCX : " + error.message);
+      console.error(error);
+    });
+  });
+
+  document.getElementById("translateJsonBtn").addEventListener("click", async function() {
+    if (!rawJsonResponse) {
+      alert("Aucun résultat JSON à traduire.");
+      return;
+    }
+    const clustersToTranslate = rawJsonResponse.clusters;
+    const payload = {
+      model: selectedModelName,
+      sous_model: selectedSubmodel,
+      user_artirev: "API",
+      data: clustersToTranslate
+    };
+    
+
+    try {
+      const start = performance.now();
+      const response = await fetch("{% url 'ajax_translate_api' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      const end = performance.now();
+
+      if (response.ok) {
+        handleApiResponse(data)
+        console.log(rawJsonResponse)
+        const translatedHtml = renderClusterResults(data, (end - start) / 1000);
+        document.getElementById("translatedClusterResult").innerHTML = translatedHtml;
+      } else {
+        alert(data.error || "Erreur lors de la traduction.");
+      }
+
+    } catch (error) {
+      console.error("Erreur lors de la requête de traduction :", error);
+      alert("Une erreur s’est produite lors de la traduction.");
+    }
+  });
+
+</script>
+
+{% endblock %}
